@@ -1,12 +1,13 @@
 ﻿using System.Text;
 using System;
 
-namespace XOR
+namespace QingYi.Crypto.XOR
 {
     /// <summary>
     /// XOR crypto.<br></br>
     /// XOR加密。
     /// </summary>
+    [Obsolete("For the best results, use the XorCryptoPlus class. This class will no longer be maintained and will not be updated later. It may be removed later.")]
     public class XorCrypto
     {
         /// <summary>

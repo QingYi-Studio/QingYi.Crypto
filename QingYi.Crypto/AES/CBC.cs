@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace AES
 {
@@ -19,7 +20,7 @@ namespace AES
         /// The hexadecimal string to convert.<br></br>
         /// 要转换的十六进制字符串。
         /// </param>
-        /// <param name="requiredLength">
+        /// <param name="expectedLength">
         /// The desired byte length.<br></br>
         /// 所需的字节长度。
         /// </param>
@@ -31,41 +32,33 @@ namespace AES
         /// Thrown when the length of the <paramref name="hex"/> string is not an even number.<br></br>
         /// 当<paramref name="hex"/>字符串的长度不是偶数时抛出。
         /// </exception>
-        private static byte[] FormattingKeyIV(string hex, int requiredLength)
+        private static byte[] FormattingKeyIV(string hex, int expectedLength)
         {
             if (string.IsNullOrWhiteSpace(hex))
             {
                 throw new ArgumentException("Hex string cannot be null or empty.", nameof(hex));
             }
 
-            // 移除任何可能的空格
-            hex = hex.Replace(" ", string.Empty);
+            hex = Regex.Replace(hex, @"[^0-9A-Fa-f]", string.Empty);
 
-            // 确保十六进制字符串的长度是偶数
             if (hex.Length % 2 != 0)
             {
                 throw new ArgumentException("Hex string must have an even length.", nameof(hex));
             }
 
-            // 截断或补零
-            if (hex.Length > requiredLength * 2)
+            if (hex.Length > expectedLength * 2)
             {
-                // 如果十六进制字符串太长，则截断
-                hex = hex.Substring(0, requiredLength * 2);
+                hex = hex.Substring(0, expectedLength * 2);
             }
-            else if (hex.Length < requiredLength * 2)
+            else if (hex.Length < expectedLength * 2)
             {
-                // 如果十六进制字符串太短，则在前面补零
-                hex = hex.PadLeft(requiredLength * 2, '0');
+                hex = hex.PadLeft(expectedLength * 2, '0');
             }
 
-            // 创建一个字节数组来存储转换后的结果
-            byte[] bytes = new byte[requiredLength];
+            byte[] bytes = new byte[expectedLength];
 
-            // 遍历十六进制字符串，每两位字符转换为一个字节
             for (int i = 0; i < hex.Length; i += 2)
             {
-                // 从十六进制字符串的指定位置提取两位字符，并将其转换为一个字节
                 bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
             }
 
@@ -479,16 +472,14 @@ namespace AES
                 {
                     aes.Key = key;
                     aes.IV = iv;
-                    aes.Mode = CipherMode.CBC; // 使用CBC模式
-                    aes.Padding = PaddingMode.PKCS7; // 使用PKCS7填充模式
+                    aes.Mode = CipherMode.CBC;
+                    aes.Padding = PaddingMode.PKCS7;
 
-                    // 创建加密器
                     using (ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV))
                     using (FileStream fsInput = new FileStream(inputFilePath, FileMode.Open, FileAccess.Read))
                     using (FileStream fsOutput = new FileStream(outputFilePath, FileMode.Create, FileAccess.Write))
                     using (CryptoStream cs = new CryptoStream(fsOutput, encryptor, CryptoStreamMode.Write))
                     {
-                        // 将输入文件内容复制到CryptoStream中进行加密，并将结果写入输出文件
                         fsInput.CopyTo(cs);
                     }
                 }
@@ -536,16 +527,14 @@ namespace AES
                 {
                     aes.Key = key;
                     aes.IV = iv;
-                    aes.Mode = CipherMode.CBC; // 使用CBC模式
-                    aes.Padding = PaddingMode.PKCS7; // 使用PKCS7填充模式
+                    aes.Mode = CipherMode.CBC;
+                    aes.Padding = PaddingMode.PKCS7;
 
-                    // 创建解密器
                     using (ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV))
                     using (FileStream fsInput = new FileStream(inputFilePath, FileMode.Open, FileAccess.Read))
                     using (FileStream fsOutput = new FileStream(outputFilePath, FileMode.Create, FileAccess.Write))
                     using (CryptoStream cs = new CryptoStream(fsOutput, decryptor, CryptoStreamMode.Write))
                     {
-                        // 将输入文件内容复制到CryptoStream中进行解密，并将结果写入输出文件
                         fsInput.CopyTo(cs);
                     }
                 }
